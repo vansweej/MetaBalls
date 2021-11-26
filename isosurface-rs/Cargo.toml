@@ -1,0 +1,21 @@
+[package]
+name = "metaballs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ndarray = { version = "0.15.3", features = ["rayon"] }
+#ndarray = "0.15.3"
+partial_application = "0.2.1"
+rayon = "1.5.1"
+
+[dev-dependencies]
+criterion = "0.3"
+pretty_assertions = "1.0.0"
+float-cmp = "0.9.0"
+
+[[bench]]
+name = "metaballs_benchmark"
+harness = false

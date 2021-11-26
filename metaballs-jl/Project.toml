@@ -1,0 +1,18 @@
+name = "MetaBalls"
+uuid = "8ebb2376-550a-4089-a3e5-020922e286f1"
+authors = ["Jan Van Sweevelt <vansweej@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+CSyntax = "ea656a56-6ca6-5dda-bba5-7b6963a5f74c"
+Folds = "41a02a25-b8f0-4f67-bc48-60067656b558"
+GLFW = "f7f18e0c-5ee9-5ccd-a5bf-e8befd85ed98"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+GLTF = "aeeaf58c-ab4d-11e9-3a9f-9b6bf58b5bc3"
+IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
+Luxor = "ae8d54c2-7ccd-5906-9d76-62fc9837b5bc"
+ModernGL = "66fc600b-dfda-50eb-8b99-91cfa97b1301"
+Quaternions = "94ee1d12-ae83-5a48-8b1c-48b8ff168ae0"
+ReferenceTests = "324d217c-45ce-50fc-942e-d289b448e8cf"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+TestSetExtensions = "98d24dd4-01ad-11ea-1b02-c9a08f80db04"
