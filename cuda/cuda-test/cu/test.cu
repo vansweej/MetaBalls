@@ -1,9 +1,13 @@
-#include <driver_types.h>
-
+#include <algorithm>
+#include <cassert>
+#include <functional>
 #include <iostream>
 
-#include "test.cuh"
 #include "cudaError.cuh"
+#include "test.cuh"
+
+int maxGridSize[3];
+int maxThreadPerBlock;
 
 __global__ void cuda_hello() { printf("Hello World from GPU!\n"); }
 
@@ -13,35 +17,51 @@ void GetCudaProperties() {
   for (int i = 0; i < count; ++i) {
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, i);
+    std::copy(prop.maxGridSize, prop.maxGridSize + 3, maxGridSize);
+    maxThreadPerBlock = prop.maxThreadsPerBlock;
     std::cout << prop.name << std::endl;
   }
 }
 
 void add() {
-  const unsigned int N = 10;
-  int a[N], b[N], result[N];
+  const unsigned int N = 101;
+  int a[N], b[N], result[N], result_2[N];
   int *dev_a, *dev_b, *dev_result;
 
   CUDA_ERROR(cudaMalloc((void **)&dev_a, N * sizeof(int)));
   CUDA_ERROR(cudaMalloc((void **)&dev_b, N * sizeof(int)));
   CUDA_ERROR(cudaMalloc((void **)&dev_result, N * sizeof(int)));
 
-  for (int i = 0; i < N; ++i) {
-    a[i] = i;
-    b[i] = i * i;
-  }
+  std::for_each(a, a + N, [](int &v) {
+    static int i = 1;
+    v = i;
+    i++;
+  });
+  std::for_each(b, b + N, [](int &v) {
+    static int i = 1;
+    v = i * i;
+    i++;
+  });
+
+  std::transform(a, a + N, b, result_2, std::minus<>{});
 
   CUDA_ERROR(cudaMemcpy(dev_a, a, N * sizeof(int), cudaMemcpyHostToDevice));
   CUDA_ERROR(cudaMemcpy(dev_b, b, N * sizeof(int), cudaMemcpyHostToDevice));
 
-  add<<<N, 1>>>(dev_a, dev_b, dev_result, N);
+  int threads = std::max(1, std::min(maxThreadPerBlock, int(std::ceil(sqrt(N)))));
+  int blocks = std::max(1, int(std::ceil(N / (float)threads)));
+
+  add<<<blocks, threads>>>(dev_a, dev_b, dev_result, N);
 
   CUDA_ERROR(
       cudaMemcpy(result, dev_result, N * sizeof(int), cudaMemcpyDeviceToHost));
 
-  for (int i = 0; i < N; ++i) {
-    std::cout << result[i] << std::endl;
-  }
+  std::for_each(result, result + N, [&result, &result_2](const int &r) {
+    static int c = 0;
+    assert(result[c] == result_2[c]);
+    std::cout << r << std::endl;
+    c++;
+  });
 
   cudaFree(dev_a);
   cudaFree(dev_b);
@@ -49,9 +69,10 @@ void add() {
 }
 
 __global__ void add(int *dev_a, int *dev_b, int *dev_result, int N) {
-  int tid = blockIdx.x;
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
   // printf("N = %d | tid = %d\n", N, tid);
-  if (tid < N) {
+  while (tid < N) {
     dev_result[tid] = dev_a[tid] - dev_b[tid];
+    tid += blockDim.x * gridDim.x;
   }
 }
