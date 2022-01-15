@@ -3,7 +3,7 @@
 using Luxor
 
 function drawmatrix(A::Matrix;
-    cellsize = (10, 10))
+    cellsize=(10, 10))
     table = Table(size(A)..., cellsize...)
     used = Set()
     for i in CartesianIndices(A)
@@ -15,8 +15,8 @@ function drawmatrix(A::Matrix;
             push!(used, A[r, c])
         end
         text(string(A[r, c]), table[r, c],
-            halign = :center,
-            valign = :middle)
+            halign=:center,
+            valign=:middle)
         sethue("white")
         box(table, r, c, :stroke)
     end
@@ -29,7 +29,7 @@ function draw_matrix()
         fontsize(30)
         setline(0.5)
         sethue("white")
-        drawmatrix(A, cellsize = 10 .* size(A))
+        drawmatrix(A, cellsize=10 .* size(A))
     end
 end
 
@@ -60,16 +60,16 @@ function Base.iterate(iter::MatrixChunks, state)
     if state[1] + 1 < iter.n
         x = state[1] + 1
         y = state[2]
-    else
+        else
         if state[2] + 1 < iter.n
             x = 1
             y = state[2] + 1
         else
-            return nothing
+        return nothing
         end
     end
 
-    element = view(iter.X, y:y+1, x:x+1)
+        element = view(iter.X, y:y + 1, x:x + 1)
 
     return (element, (x, y))
 end
@@ -77,16 +77,16 @@ end
 
 
 function iterate_iso_field(a::Matrix{<:AbstractFloat})
-    for y = 1:size(a, 1)-1
-        for x = 1:size(a, 2)-1
-            s = view(a, y:y+1, x:x+1)
+    for y = 1:size(a, 1) - 1
+        for x = 1:size(a, 2) - 1
+            s = view(a, y:y + 1, x:x + 1)
             display((x, y))
             display(s)
         end
     end
 end
 
-function generate_iso_field()
+    function generate_iso_field()
     a = randn(4, 4)
 
     display(a)
