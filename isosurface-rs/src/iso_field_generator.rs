@@ -4,7 +4,7 @@ use partial_application::partial;
 use num_traits::identities::Zero;
 
 #[repr(transparent)]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Voxel {
     iso_value: f32,
 }
@@ -20,6 +20,7 @@ impl Voxel {
 impl Add for Voxel {
     type Output = Self;
 
+    #[inline]
     fn add(self, rhs: Self) -> Self {
         Self {
             iso_value: self.iso_value + rhs.iso_value,
@@ -56,7 +57,9 @@ fn calculate_voxel_value(
         .sum())
 }
 
-pub fn generate_iso_field(grid_size: usize, ball_positions: &[(f32, f32, f32)]) -> Array3<Voxel> {
+type ScalarField = Array3<Voxel>;
+
+pub fn generate_iso_field(grid_size: usize, ball_positions: &[(f32, f32, f32)]) -> ScalarField {
     let voxel_value = partial!(calculate_voxel_value => _, ball_positions);
 
     Array::from_shape_fn([grid_size; 3].into_dimension(), voxel_value)
@@ -66,7 +69,7 @@ pub fn generate_iso_field2(
     grid_size: usize,
     ball_positions: &[(f32, f32, f32)],
     iso_surface: &Array3<Voxel>,
-) -> Array3<Voxel> {
+) -> ScalarField {
     iso_surface
         .indexed_iter()
         .map(|x: ((usize, usize, usize), &Voxel)| calculate_voxel_value(x.0, ball_positions))
