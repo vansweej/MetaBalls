@@ -4,7 +4,7 @@ use ndarray::{Array, Array3};
 use std::convert::From;
 use std::ops::{Add, Mul};
 use std::vec::IntoIter;
-use crate::iso_field_generator::Voxel;
+use crate::iso_field_generator::{ScalarField, Voxel};
 use num_traits::Zero;
 
 type Indexes = (usize, usize, usize);
@@ -22,15 +22,15 @@ const MASKS: [Mask; 8] = [
 ];
 
 #[derive(Debug)]
-struct Vertex1 {
+struct Vertex {
     x: f32,
     y: f32,
     z: f32,
 }
 
-impl From<(Indexes, Mask)> for Vertex1 {
+impl From<(Indexes, Mask)> for Vertex {
     fn from(i: (Indexes, Mask)) -> Self {
-        Vertex1 {
+        Vertex {
             x: i.0.0.mul(2).add(i.1.0) as f32,
             y: i.0.1.mul(2).add(i.1.1) as f32,
             z: i.0.2.mul(2).add(i.1.2) as f32,
@@ -39,14 +39,14 @@ impl From<(Indexes, Mask)> for Vertex1 {
 }
 
 #[derive(Debug)]
-struct VoxelElement1 {
-    vertex: Vertex1,
+pub struct Corner {
+    vertex: Vertex,
     iso_value: Voxel,
 }
 
-type Voxel1 = [VoxelElement1; 8];
+pub type Cube = [Corner; 8];
 
-fn collect_iso_volume(iso_field: &Array3<Voxel>) -> Array3<Array3<Voxel>> {
+fn collect_iso_volume(iso_field: &ScalarField) -> Array3<Array3<Voxel>> {
     let grid_size = iso_field.dim().0;
 
     iso_field
@@ -58,98 +58,99 @@ fn collect_iso_volume(iso_field: &Array3<Voxel>) -> Array3<Array3<Voxel>> {
         .unwrap()
 }
 
-fn voxels_iter(iso_field: &Array3<Array3<Voxel>>) -> IntoIter<Voxel1> {
+pub fn voxels_iter(iso_field: &Array3<Array3<Voxel>>) -> IntoIter<Cube> {
     let indexed_iter = iso_field.indexed_iter();
     indexed_iter
         .map(|(index, data)| {
-            if index == (1, 1, 0) {
-                println!("{:?}", index);
-            }
-            let voxel: Voxel1 = [
+            // if index == (1, 1, 0) {
+            //     println!("{:?}", index);
+            // }
+
+            let voxel: Cube = [
                 {
-                    let v = Vertex1 {
+                    let v = Vertex {
                         x: index.0.mul(2) as f32,
                         y: index.1.mul(2) as f32,
                         z: index.2.mul(2) as f32,
                     };
-                    VoxelElement1 {
+                    Corner {
                         vertex: v,
                         iso_value: data[[0, 0, 0]],
                     }
                 },
                 {
-                    let v = Vertex1 {
+                    let v = Vertex {
                         x: index.0.mul(2).add(1) as f32,
                         y: index.1.mul(2) as f32,
                         z: index.2.mul(2) as f32,
                     };
-                    VoxelElement1 {
+                    Corner {
                         vertex: v,
                         iso_value: data[[1, 0, 0]],
                     }
                 },
                 {
-                    let v = Vertex1 {
+                    let v = Vertex {
                         x: index.0.mul(2).add(1) as f32,
                         y: index.1.mul(2) as f32,
                         z: index.2.mul(2).add(1) as f32,
                     };
-                    VoxelElement1 {
+                    Corner {
                         vertex: v,
                         iso_value: data[[1, 0, 1]],
                     }
                 },
                 {
-                    let v = Vertex1 {
+                    let v = Vertex {
                         x: index.0.mul(2) as f32,
                         y: index.1.mul(2) as f32,
                         z: index.2.mul(2).add(1) as f32,
                     };
-                    VoxelElement1 {
+                    Corner {
                         vertex: v,
                         iso_value: data[[0, 0, 1]],
                     }
                 },
                 {
-                    let v = Vertex1 {
+                    let v = Vertex {
                         x: index.0.mul(2) as f32,
                         y: index.1.mul(2).add(1) as f32,
                         z: index.2.mul(2) as f32,
                     };
-                    VoxelElement1 {
+                    Corner {
                         vertex: v,
                         iso_value: data[[0, 1, 0]],
                     }
                 },
                 {
-                    let v = Vertex1 {
+                    let v = Vertex {
                         x: index.0.mul(2).add(1) as f32,
                         y: index.1.mul(2).add(1) as f32,
                         z: index.2.mul(2) as f32,
                     };
-                    VoxelElement1 {
+                    Corner {
                         vertex: v,
                         iso_value: data[[1, 1, 0]],
                     }
                 },
                 {
-                    let v = Vertex1 {
+                    let v = Vertex {
                         x: index.0.mul(2).add(1) as f32,
                         y: index.1.mul(2).add(1) as f32,
                         z: index.2.mul(2).add(1) as f32,
                     };
-                    VoxelElement1 {
+                    Corner {
                         vertex: v,
                         iso_value: data[[1, 1, 1]],
                     }
                 },
                 {
-                    let v = Vertex1 {
+                    let v = Vertex {
                         x: index.0.mul(2) as f32,
                         y: index.1.mul(2).add(1) as f32,
                         z: index.2.mul(2).add(1) as f32,
                     };
-                    VoxelElement1 {
+                    Corner {
                         vertex: v,
                         iso_value: data[[0, 1, 1]],
                     }
@@ -157,7 +158,7 @@ fn voxels_iter(iso_field: &Array3<Array3<Voxel>>) -> IntoIter<Voxel1> {
             ];
             voxel
         })
-        .collect::<Vec<Voxel1>>()
+        .collect::<Vec<Cube>>()
         .into_iter()
 }
 
@@ -170,9 +171,9 @@ mod tests {
 
     const BALL_POS: [(f32, f32, f32); 2] = [(8.5, 8.5, 8.5), (8.5, 17.0, 8.5)];
 
-    const GRID_SIZE: usize = 128;
+    const GRID_SIZE: usize = 32;
 
-    fn assert_voxel(voxel: &Voxel1, iso_cube: &ScalarField) {
+    fn assert_voxel(voxel: &Cube, iso_cube: &ScalarField) {
         voxel.iter().for_each(|v| {
             let vertex_value = v.iso_value;
             let cube_value = iso_cube[[
@@ -189,16 +190,27 @@ mod tests {
         let iso_cube = generate_iso_field(GRID_SIZE, &BALL_POS);
 
         let mut v_iter = voxels_iter(&collect_iso_volume(&iso_cube));
-        //
-        // //v_iter.for_each(|v| assert_voxel(&v, &iso_cube));
-        //
+
+        v_iter.for_each(|v| assert_voxel(&v, &iso_cube));
+
         // println!();
+
+        // let v0 = v_iter.nth(0).unwrap();
+        // // assert_voxel(&v1, &iso_cube);
         //
-        let v1 = v_iter.nth(1).unwrap();
-        assert_voxel(&v1, &iso_cube);
-        // //
-        // // println!();
-        // //
+        // println!("{:?}", v0);
+        //
+        // let v1 = v_iter.nth(1).unwrap();
+        // // assert_voxel(&v1, &iso_cube);
+        //
+        // println!("{:?}", v1);
+        //
+        //
+        // let v5 = v_iter.nth(5).unwrap();
+        // // assert_voxel(&v1, &iso_cube);
+        //
+        // println!("{:?}", v5);
+
         // // println!("{:?}", iso_cube[[0, 0, 1]]);
         //
         // let v2 = v_iter.nth(256).unwrap();

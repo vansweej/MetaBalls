@@ -39,7 +39,7 @@ function distance(x, y, z, posArr)
 end
 
 function fill_ISO_SURFACE(size)
-    iso_surfaces = [distance(x-1, y-1, z-1, BALL_POS) for x = 1:size, y = 1:size, z = 1:size]
+    iso_surfaces = [distance(x - 1, y - 1, z - 1, BALL_POS) for x = 1:size, y = 1:size, z = 1:size]
     result = map((x) -> sum(x), iso_surfaces)
 
     return result
@@ -132,9 +132,9 @@ function createTriangles(vertList, cubeIndex)
 
     for (index, value) in enumerate(trisLookup)
         if value != -1
-            compactVertexArray[1+((index-1)*3)] = vertList[value+1].x
-            compactVertexArray[2+((index-1)*3)] = vertList[value+1].y
-            compactVertexArray[3+((index-1)*3)] = vertList[value+1].z
+            compactVertexArray[1 + ((index - 1) * 3)] = vertList[value + 1].x
+            compactVertexArray[2 + ((index - 1) * 3)] = vertList[value + 1].y
+            compactVertexArray[3 + ((index - 1) * 3)] = vertList[value + 1].z
         end
     end
     # println(compactVertexArray)
@@ -145,19 +145,19 @@ function polygonise_ISO_SURFACE()
     iso_surface = fill_ISO_SURFACE(GRID_SIZE)
     vertexArray = Array{Float64}(undef, 0)
 
-    for x = 1:size(iso_surface, 1)-1
-        for y = 1:size(iso_surface, 1)-1
-            for z = 1:size(iso_surface, 1)-1
-                voxel = [VoxelElement(Vertex(x, y, z), iso_surface[x, y, z]), VoxelElement(Vertex((x + 1), y, z), iso_surface[x+1, y, z]),
-                    VoxelElement(Vertex((x + 1), y, (z + 1)), iso_surface[x+1, y, z+1]), VoxelElement(Vertex(x, y, (z + 1)), iso_surface[x, y, z+1]),
-                    VoxelElement(Vertex(x, (y + 1), z), iso_surface[x, y+1, z]), VoxelElement(Vertex((x + 1), (y + 1), z), iso_surface[x+1, y+1, z]),
-                    VoxelElement(Vertex((x + 1), (y + 1), (z + 1)), iso_surface[x+1, y+1, z+1]), VoxelElement(Vertex(x, (y + 1), (z + 1)), iso_surface[x, y+1, z+1])]
+    for x = 1:size(iso_surface, 1) - 1
+        for y = 1:size(iso_surface, 1) - 1
+            for z = 1:size(iso_surface, 1) - 1
+                voxel = [VoxelElement(Vertex(x, y, z), iso_surface[x, y, z]), VoxelElement(Vertex((x + 1), y, z), iso_surface[x + 1, y, z]),
+                    VoxelElement(Vertex((x + 1), y, (z + 1)), iso_surface[x + 1, y, z + 1]), VoxelElement(Vertex(x, y, (z + 1)), iso_surface[x, y, z + 1]),
+                    VoxelElement(Vertex(x, (y + 1), z), iso_surface[x, y + 1, z]), VoxelElement(Vertex((x + 1), (y + 1), z), iso_surface[x + 1, y + 1, z]),
+                    VoxelElement(Vertex((x + 1), (y + 1), (z + 1)), iso_surface[x + 1, y + 1, z + 1]), VoxelElement(Vertex(x, (y + 1), (z + 1)), iso_surface[x, y + 1, z + 1])]
 
 
                 cubeIndex = edge_lookup(voxel)
                 if cubeIndex > 0
                     # println(edgeTable[cubeIndex + 1])    # julia is 1 indexed
-                    vertList = vertices(edgeTable[cubeIndex+1], voxel, ISO_VALUE)
+                    vertList = vertices(edgeTable[cubeIndex + 1], voxel, ISO_VALUE)
 
                     # println(cubeIndex + 1)
                     # println(vertList)
@@ -198,6 +198,9 @@ function check_ISO_SURFACE()
     println(iso_surface[2, 1, 1])
 
     println(iso_surface[13, 6, 21])
+
+    println(iso_surface[1, 1, 17])
+
 end
 
 greet() = print("Hello World!")
