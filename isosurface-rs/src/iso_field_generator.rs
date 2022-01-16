@@ -57,7 +57,7 @@ fn calculate_voxel_value(
         .sum())
 }
 
-type ScalarField = Array3<Voxel>;
+pub type ScalarField = Array3<Voxel>;
 
 pub fn generate_iso_field(grid_size: usize, ball_positions: &[(f32, f32, f32)]) -> ScalarField {
     let voxel_value = partial!(calculate_voxel_value => _, ball_positions);
@@ -68,7 +68,7 @@ pub fn generate_iso_field(grid_size: usize, ball_positions: &[(f32, f32, f32)]) 
 pub fn generate_iso_field2(
     grid_size: usize,
     ball_positions: &[(f32, f32, f32)],
-    iso_surface: &Array3<Voxel>,
+    iso_surface: &ScalarField,
 ) -> ScalarField {
     iso_surface
         .indexed_iter()
@@ -81,12 +81,12 @@ pub fn generate_iso_field2(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use float_cmp::approx_eq;
+    use float_cmp::{approx_eq, ApproxEq, F32Margin};
     use pretty_assertions::assert_eq;
 
     pub const BALL_POS: [(f32, f32, f32); 2] = [(8.5, 8.5, 8.5), (8.5, 17.0, 8.5)];
 
-    pub const GRID_SIZE: usize = 128;
+    pub const GRID_SIZE: usize = 32;
 
     #[test]
     fn test_generate_iso_surface() {
@@ -97,7 +97,7 @@ mod tests {
 
     #[test]
     fn test_generate_iso_surface2() {
-        let iso_surface: Array3<Voxel> = Array::zeros((GRID_SIZE, GRID_SIZE, GRID_SIZE));
+        let iso_surface: ScalarField = Array::zeros((GRID_SIZE, GRID_SIZE, GRID_SIZE));
         let result = generate_iso_field2(GRID_SIZE, &BALL_POS, &iso_surface);
 
         assert_eq!(result.shape(), [GRID_SIZE, GRID_SIZE, GRID_SIZE]);
@@ -107,12 +107,36 @@ mod tests {
     fn test_compare_two_generators() {
         let result1 = generate_iso_field(GRID_SIZE, &BALL_POS);
 
-        let iso_surface: Array3<Voxel> = Array::zeros((GRID_SIZE, GRID_SIZE, GRID_SIZE));
+        let iso_surface: ScalarField = Array::zeros((GRID_SIZE, GRID_SIZE, GRID_SIZE));
         let result2 = generate_iso_field2(GRID_SIZE, &BALL_POS, &iso_surface);
 
         result1
             .iter()
             .zip(result2.iter())
             .for_each(|(a, b)| assert!(approx_eq!(f32, a.iso_value, b.iso_value, ulps = 2)));
+    }
+
+    #[test]
+    fn test_content() {
+        let result = generate_iso_field(GRID_SIZE, &BALL_POS);
+        println!("{:?}", result[[0, 0, 0]]);
+
+        println!("{:?}", result[[0, 0, 1]]);
+
+        println!("{:?}", result[[0, 1, 0]]);
+
+        println!("{:?}", result[[1, 0, 0]]);
+
+        println!("{:?}", result[[12, 5, 20]]);
+    }
+
+    impl ApproxEq for Voxel {
+        type Margin = F32Margin;
+
+        fn approx_eq<T: Into<Self::Margin>>(self, other: Self, margin: T) -> bool {
+            let margin = margin.into();
+
+            self.iso_value.approx_eq(other.iso_value, margin)
+        }
     }
 }

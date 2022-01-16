@@ -4,6 +4,11 @@ use ndarray::{Array, Array3};
 use std::convert::From;
 use std::ops::{Add, Mul};
 use std::vec::IntoIter;
+use crate::iso_field_generator::Voxel;
+use num_traits::Zero;
+
+type Indexes = (usize, usize, usize);
+type Mask = (usize, usize, usize);
 
 const MASKS: [Mask; 8] = [
     (0, 0, 0),
@@ -23,15 +28,12 @@ struct Vertex1 {
     z: f32,
 }
 
-type Indexes = (usize, usize, usize);
-type Mask = (usize, usize, usize);
-
 impl From<(Indexes, Mask)> for Vertex1 {
     fn from(i: (Indexes, Mask)) -> Self {
         Vertex1 {
-            x: i.0 .0.mul(2).add(i.1 .0) as f32,
-            y: i.0 .1.mul(2).add(i.1 .1) as f32,
-            z: i.0 .2.mul(2).add(i.1 .2) as f32,
+            x: i.0.0.mul(2).add(i.1.0) as f32,
+            y: i.0.1.mul(2).add(i.1.1) as f32,
+            z: i.0.2.mul(2).add(i.1.2) as f32,
         }
     }
 }
@@ -39,24 +41,24 @@ impl From<(Indexes, Mask)> for Vertex1 {
 #[derive(Debug)]
 struct VoxelElement1 {
     vertex: Vertex1,
-    iso_value: f32,
+    iso_value: Voxel,
 }
 
 type Voxel1 = [VoxelElement1; 8];
 
-fn collect_iso_volume(iso_field: &Array3<f32>) -> Array3<Array3<f32>> {
+fn collect_iso_volume(iso_field: &Array3<Voxel>) -> Array3<Array3<Voxel>> {
     let grid_size = iso_field.dim().0;
 
     iso_field
         .exact_chunks((2, 2, 2))
         .into_iter()
         .map(|c| c.into_owned())
-        .collect::<Array<Array3<f32>, _>>()
+        .collect::<Array<Array3<Voxel>, _>>()
         .into_shape((grid_size / 2, grid_size / 2, grid_size / 2))
         .unwrap()
 }
 
-fn voxels_iter(iso_field: &Array3<Array3<f32>>) -> IntoIter<Voxel1> {
+fn voxels_iter(iso_field: &Array3<Array3<Voxel>>) -> IntoIter<Voxel1> {
     let indexed_iter = iso_field.indexed_iter();
     indexed_iter
         .map(|(index, data)| {
@@ -72,7 +74,7 @@ fn voxels_iter(iso_field: &Array3<Array3<f32>>) -> IntoIter<Voxel1> {
                     };
                     VoxelElement1 {
                         vertex: v,
-                        iso_value: data[MASKS[0]],
+                        iso_value: data[[0, 0, 0]],
                     }
                 },
                 {
@@ -162,7 +164,7 @@ fn voxels_iter(iso_field: &Array3<Array3<f32>>) -> IntoIter<Voxel1> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::iso_field_generator::generate_iso_field;
+    use crate::iso_field_generator::{generate_iso_field, ScalarField};
     use float_cmp::approx_eq;
     use pretty_assertions::assert_eq;
 
@@ -170,7 +172,7 @@ mod tests {
 
     const GRID_SIZE: usize = 128;
 
-    fn assert_voxel(voxel: &Voxel1, iso_cube: &Array3<f32>) {
+    fn assert_voxel(voxel: &Voxel1, iso_cube: &ScalarField) {
         voxel.iter().for_each(|v| {
             let vertex_value = v.iso_value;
             let cube_value = iso_cube[[
@@ -178,22 +180,22 @@ mod tests {
                 v.vertex.y as usize,
                 v.vertex.z as usize,
             ]];
-            assert!(approx_eq!(f32, vertex_value, cube_value, ulps = 2));
+            assert!(approx_eq!(Voxel, vertex_value, cube_value, ulps = 2));
         });
     }
 
     #[test]
     fn test_convert_iso_to_voxels() {
-        // let iso_cube = generate_iso_field(GRID_SIZE, &BALL_POS);
-        //
-        // let mut v_iter = voxels_iter(&collect_iso_volume(&iso_cube));
+        let iso_cube = generate_iso_field(GRID_SIZE, &BALL_POS);
+
+        let mut v_iter = voxels_iter(&collect_iso_volume(&iso_cube));
         //
         // //v_iter.for_each(|v| assert_voxel(&v, &iso_cube));
         //
         // println!();
         //
-        // let v1 = v_iter.nth(1).unwrap();
-        // assert_voxel(&v1, &iso_cube);
+        let v1 = v_iter.nth(1).unwrap();
+        assert_voxel(&v1, &iso_cube);
         // //
         // // println!();
         // //

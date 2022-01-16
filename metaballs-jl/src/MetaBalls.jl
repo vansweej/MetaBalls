@@ -39,7 +39,7 @@ function distance(x, y, z, posArr)
 end
 
 function fill_ISO_SURFACE(size)
-    iso_surfaces = [distance(x, y, z, BALL_POS) for x = 1:size, y = 1:size, z = 1:size]
+    iso_surfaces = [distance(x-1, y-1, z-1, BALL_POS) for x = 1:size, y = 1:size, z = 1:size]
     result = map((x) -> sum(x), iso_surfaces)
 
     return result
@@ -187,16 +187,29 @@ function draw_ISO_SURFACE()
 
 end
 
+function check_ISO_SURFACE()
+    iso_surface = fill_ISO_SURFACE(GRID_SIZE)
+    println(iso_surface[1, 1, 1])
+
+    println(iso_surface[1, 1, 2])
+
+    println(iso_surface[1, 2, 1])
+
+    println(iso_surface[2, 1, 1])
+
+    println(iso_surface[13, 6, 21])
+end
+
 greet() = print("Hello World!")
 
-module MarchingSquares
-include("MarchingSquares.jl")
-end
-
-module RenderGL
-include("RenderGL.jl")
-end
-
+# module MarchingSquares
+# include("MarchingSquares.jl")
+# end
+# 
+# module RenderGL
+# include("RenderGL.jl")
+# end
+# 
 
 end # module
 
