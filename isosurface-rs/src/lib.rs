@@ -1,6 +1,7 @@
 pub mod iso_field_generator;
-pub(crate) mod iso_field_polygoniser;
+pub mod iso_field_polygoniser;
 pub(crate) mod lookup;
+pub mod compose;
 
 #[cfg(test)]
 mod tests {

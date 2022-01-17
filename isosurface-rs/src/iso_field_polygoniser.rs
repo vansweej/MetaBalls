@@ -6,6 +6,8 @@ use std::ops::{Add, Mul};
 use std::vec::IntoIter;
 use crate::iso_field_generator::{ScalarField, Voxel};
 use num_traits::Zero;
+use crate::{compose, iso_field_generator};
+use crate::compose::compose_two;
 
 type Indexes = (usize, usize, usize);
 type Mask = (usize, usize, usize);
@@ -46,7 +48,7 @@ pub struct Corner {
 
 pub type Cube = [Corner; 8];
 
-fn collect_iso_volume(iso_field: &ScalarField) -> Array3<Array3<Voxel>> {
+pub fn collect_iso_volume(iso_field: &ScalarField) -> Array3<Array3<Voxel>> {
     let grid_size = iso_field.dim().0;
 
     iso_field
@@ -58,108 +60,45 @@ fn collect_iso_volume(iso_field: &ScalarField) -> Array3<Array3<Voxel>> {
         .unwrap()
 }
 
-pub fn voxels_iter(iso_field: &Array3<Array3<Voxel>>) -> IntoIter<Cube> {
-    let indexed_iter = iso_field.indexed_iter();
+pub fn cubes_iter(chunked_iso_field: Array3<Array3<Voxel>>) -> IntoIter<Cube> {
+    //let chunked_iso_field = collect_iso_volume(&iso_field);
+
+    let indexed_iter = chunked_iso_field.indexed_iter();
+
     indexed_iter
         .map(|(index, data)| {
-            // if index == (1, 1, 0) {
-            //     println!("{:?}", index);
-            // }
-
-            let voxel: Cube = [
-                {
-                    let v = Vertex {
-                        x: index.0.mul(2) as f32,
-                        y: index.1.mul(2) as f32,
-                        z: index.2.mul(2) as f32,
-                    };
-                    Corner {
-                        vertex: v,
-                        iso_value: data[[0, 0, 0]],
-                    }
-                },
-                {
-                    let v = Vertex {
-                        x: index.0.mul(2).add(1) as f32,
-                        y: index.1.mul(2) as f32,
-                        z: index.2.mul(2) as f32,
-                    };
-                    Corner {
-                        vertex: v,
-                        iso_value: data[[1, 0, 0]],
-                    }
-                },
-                {
-                    let v = Vertex {
-                        x: index.0.mul(2).add(1) as f32,
-                        y: index.1.mul(2) as f32,
-                        z: index.2.mul(2).add(1) as f32,
-                    };
-                    Corner {
-                        vertex: v,
-                        iso_value: data[[1, 0, 1]],
-                    }
-                },
-                {
-                    let v = Vertex {
-                        x: index.0.mul(2) as f32,
-                        y: index.1.mul(2) as f32,
-                        z: index.2.mul(2).add(1) as f32,
-                    };
-                    Corner {
-                        vertex: v,
-                        iso_value: data[[0, 0, 1]],
-                    }
-                },
-                {
-                    let v = Vertex {
-                        x: index.0.mul(2) as f32,
-                        y: index.1.mul(2).add(1) as f32,
-                        z: index.2.mul(2) as f32,
-                    };
-                    Corner {
-                        vertex: v,
-                        iso_value: data[[0, 1, 0]],
-                    }
-                },
-                {
-                    let v = Vertex {
-                        x: index.0.mul(2).add(1) as f32,
-                        y: index.1.mul(2).add(1) as f32,
-                        z: index.2.mul(2) as f32,
-                    };
-                    Corner {
-                        vertex: v,
-                        iso_value: data[[1, 1, 0]],
-                    }
-                },
-                {
-                    let v = Vertex {
-                        x: index.0.mul(2).add(1) as f32,
-                        y: index.1.mul(2).add(1) as f32,
-                        z: index.2.mul(2).add(1) as f32,
-                    };
-                    Corner {
-                        vertex: v,
-                        iso_value: data[[1, 1, 1]],
-                    }
-                },
-                {
-                    let v = Vertex {
-                        x: index.0.mul(2) as f32,
-                        y: index.1.mul(2).add(1) as f32,
-                        z: index.2.mul(2).add(1) as f32,
-                    };
-                    Corner {
-                        vertex: v,
-                        iso_value: data[[0, 1, 1]],
-                    }
-                },
-            ];
-            voxel
+            MASKS.map(|m| {
+                Corner {
+                    vertex: Vertex::from((index, m)),
+                    iso_value: data[[m.0, m.1, m.2]],
+                }
+            })
         })
         .collect::<Vec<Cube>>()
         .into_iter()
+}
+
+pub fn cubes_iter2(iso_field: &ScalarField) -> IntoIter<Cube> {
+    let chunked_iso_field = collect_iso_volume(&iso_field);
+
+    let indexed_iter = chunked_iso_field.indexed_iter();
+
+    indexed_iter
+        .map(|(index, data)| {
+            MASKS.map(|m| {
+                Corner {
+                    vertex: Vertex::from((index, m)),
+                    iso_value: data[[m.0, m.1, m.2]],
+                }
+            })
+        })
+        .collect::<Vec<Cube>>()
+        .into_iter()
+}
+
+fn t<'a>() -> impl Fn(&'a ScalarField) -> IntoIter<Cube> {
+    let x = compose!(collect_iso_volume, cubes_iter);
+    x
 }
 
 #[cfg(test)]
@@ -168,12 +107,14 @@ mod tests {
     use crate::iso_field_generator::{generate_iso_field, ScalarField};
     use float_cmp::approx_eq;
     use pretty_assertions::assert_eq;
+    use crate::compose;
+    use crate::compose::compose_two;
 
     const BALL_POS: [(f32, f32, f32); 2] = [(8.5, 8.5, 8.5), (8.5, 17.0, 8.5)];
 
     const GRID_SIZE: usize = 32;
 
-    fn assert_voxel(voxel: &Cube, iso_cube: &ScalarField) {
+    fn assert_cube(voxel: &Cube, iso_cube: &ScalarField) {
         voxel.iter().for_each(|v| {
             let vertex_value = v.iso_value;
             let cube_value = iso_cube[[
@@ -189,9 +130,12 @@ mod tests {
     fn test_convert_iso_to_voxels() {
         let iso_cube = generate_iso_field(GRID_SIZE, &BALL_POS);
 
-        let mut v_iter = voxels_iter(&collect_iso_volume(&iso_cube));
+        //let mut c_iter = cubes_iter(&iso_cube);
 
-        v_iter.for_each(|v| assert_voxel(&v, &iso_cube));
+        let c_iter = compose!(collect_iso_volume, cubes_iter)(&iso_cube);
+
+
+        c_iter.for_each(|v| assert_cube(&v, &iso_cube));
 
         // println!();
 
