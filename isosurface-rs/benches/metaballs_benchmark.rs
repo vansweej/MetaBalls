@@ -1,9 +1,10 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use metaballs::iso_field_generator::{generate_iso_field, generate_iso_field2, Voxel};
+use metaballs::iso_field_generator::{generate_iso_field, generate_iso_field2};
 use ndarray::{Array, Array3};
 use metaballs::compose;
 use metaballs::compose::compose_two;
 use metaballs::iso_field_polygoniser::{collect_iso_volume, cubes_iter, cubes_iter2};
+use metaballs::voxel::Voxel;
 
 const BALL_POS: [(f32, f32, f32); 2] = [(8.5, 8.5, 8.5), (8.5, 17.0, 8.5)];
 
