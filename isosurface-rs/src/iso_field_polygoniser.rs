@@ -1,12 +1,10 @@
-use ndarray::{Array, Array3};
-// use rayon::prelude::*;
+use ndarray::{Array, Array1, Array3, ArrayView, ArrayView1, ArrayView3, Ix3};
+use rayon::prelude::*;
 // use rayon::vec::IntoIter;
 use std::convert::From;
 use std::ops::{Add, Mul};
 use std::vec::IntoIter;
 use crate::voxel::Voxel;
-use crate::compose;
-use crate::compose::compose_two;
 use crate::iso_field_generator::ScalarField;
 
 type Indexes = (usize, usize, usize);
@@ -48,7 +46,7 @@ pub struct Corner {
 
 pub type Cube = [Corner; 8];
 
-pub fn collect_iso_volume(iso_field: &ScalarField) -> Array3<Array3<Voxel>> {
+fn collect_iso_volume(iso_field: &ScalarField) -> Array3<Array3<Voxel>> {
     let grid_size = iso_field.dim().0;
 
     iso_field
@@ -60,25 +58,9 @@ pub fn collect_iso_volume(iso_field: &ScalarField) -> Array3<Array3<Voxel>> {
         .unwrap()
 }
 
-pub fn cubes_iter(chunked_iso_field: Array3<Array3<Voxel>>) -> IntoIter<Cube> {
-    //let chunked_iso_field = collect_iso_volume(&iso_field);
 
-    let indexed_iter = chunked_iso_field.indexed_iter();
 
-    indexed_iter
-        .map(|(index, data)| {
-            MASKS.map(|m| {
-                Corner {
-                    vertex: Vertex::from((index, m)),
-                    iso_value: data[[m.0, m.1, m.2]],
-                }
-            })
-        })
-        .collect::<Vec<Cube>>()
-        .into_iter()
-}
-
-pub fn cubes_iter2(iso_field: &ScalarField) -> IntoIter<Cube> {
+pub fn cubes_iter(iso_field: &ScalarField) -> IntoIter<Cube> {
     let chunked_iso_field = collect_iso_volume(&iso_field);
 
     let indexed_iter = chunked_iso_field.indexed_iter();
@@ -96,8 +78,26 @@ pub fn cubes_iter2(iso_field: &ScalarField) -> IntoIter<Cube> {
         .into_iter()
 }
 
-fn t<'a>() -> impl Fn(&'a ScalarField) -> IntoIter<Cube> {
-    let x = compose!(collect_iso_volume, cubes_iter);
+pub fn cubes_iter2(iso_field: &ScalarField) -> Array1<Cube> {
+    let grid_size = iso_field.dim().0;
+
+    let x = iso_field
+        .exact_chunks((2, 2, 2))
+        .into_iter()
+        .collect::<Array<ArrayView3<Voxel>, _>>()
+        .into_shape((grid_size / 2, grid_size / 2, grid_size / 2)).unwrap()
+        .indexed_iter()
+        .map(|(index, data)| {
+            MASKS.map(|m| {
+                Corner {
+                    vertex: Vertex::from((index, m)),
+                    iso_value: data[[m.0, m.1, m.2]],
+                }
+            })
+        })
+        .collect::<Array1<Cube>>();
+        //.into_iter();
+
     x
 }
 
@@ -107,8 +107,6 @@ mod tests {
     use crate::iso_field_generator::{generate_iso_field, ScalarField};
     use float_cmp::approx_eq;
     use pretty_assertions::assert_eq;
-    use crate::compose;
-    use crate::compose::compose_two;
 
     const BALL_POS: [(f32, f32, f32); 2] = [(8.5, 8.5, 8.5), (8.5, 17.0, 8.5)];
 
@@ -130,34 +128,21 @@ mod tests {
     fn test_convert_iso_to_voxels() {
         let iso_cube = generate_iso_field(GRID_SIZE, &BALL_POS);
 
-        //let mut c_iter = cubes_iter(&iso_cube);
-
-        let c_iter = compose!(collect_iso_volume, cubes_iter)(&iso_cube);
+        let c_iter = cubes_iter(&iso_cube);
 
 
         c_iter.for_each(|v| assert_cube(&v, &iso_cube));
 
-        // println!();
+    }
 
-        // let v0 = v_iter.nth(0).unwrap();
-        // // assert_voxel(&v1, &iso_cube);
-        //
-        // println!("{:?}", v0);
-        //
-        // let v1 = v_iter.nth(1).unwrap();
-        // // assert_voxel(&v1, &iso_cube);
-        //
-        // println!("{:?}", v1);
-        //
-        //
-        // let v5 = v_iter.nth(5).unwrap();
-        // // assert_voxel(&v1, &iso_cube);
-        //
-        // println!("{:?}", v5);
+    #[test]
+    fn test_view_based_chunking() {
+        let iso_cube = generate_iso_field(GRID_SIZE, &BALL_POS);
 
-        // // println!("{:?}", iso_cube[[0, 0, 1]]);
-        //
-        // let v2 = v_iter.nth(256).unwrap();
-        // assert_voxel(&v2, &iso_cube);
+        let c_iter = cubes_iter2(&iso_cube);
+
+        c_iter.for_each(|v| assert_cube(&v, &iso_cube));
+
+
     }
 }
