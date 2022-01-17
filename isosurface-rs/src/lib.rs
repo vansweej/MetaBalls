@@ -2,6 +2,7 @@ pub mod iso_field_generator;
 pub mod iso_field_polygoniser;
 pub(crate) mod lookup;
 pub mod compose;
+pub mod voxel;
 
 #[cfg(test)]
 mod tests {

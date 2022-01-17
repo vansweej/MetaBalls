@@ -1,46 +1,8 @@
-use std::ops::Add;
+
 use ndarray::{Array, Array3, IntoDimension};
 use partial_application::partial;
-use num_traits::identities::Zero;
 
-#[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Voxel {
-    iso_value: f32,
-}
-
-impl Voxel {
-    pub fn new(value: f32) -> Voxel {
-        Voxel {
-            iso_value: value,
-        }
-    }
-}
-
-impl Add for Voxel {
-    type Output = Self;
-
-    #[inline]
-    fn add(self, rhs: Self) -> Self {
-        Self {
-            iso_value: self.iso_value + rhs.iso_value,
-        }
-    }
-}
-
-impl Zero for Voxel {
-    #[inline]
-    fn zero() -> Voxel {
-        Voxel {
-            iso_value: 0.0,
-        }
-    }
-
-    #[inline]
-    fn is_zero(&self) -> bool {
-        self.iso_value == 0.0
-    }
-}
+use crate::voxel::Voxel;
 
 #[inline(always)]
 fn calculate_voxel_value(
@@ -81,7 +43,7 @@ pub fn generate_iso_field2(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use float_cmp::{approx_eq, ApproxEq, F32Margin};
+    use float_cmp::{approx_eq};
     use pretty_assertions::assert_eq;
 
     pub const BALL_POS: [(f32, f32, f32); 2] = [(8.5, 8.5, 8.5), (8.5, 17.0, 8.5)];
@@ -113,7 +75,7 @@ mod tests {
         result1
             .iter()
             .zip(result2.iter())
-            .for_each(|(a, b)| assert!(approx_eq!(f32, a.iso_value, b.iso_value, ulps = 2)));
+            .for_each(|(a, b)| assert!(approx_eq!(Voxel, *a, *b, ulps = 2)));
     }
 
     #[test]
@@ -130,13 +92,4 @@ mod tests {
         println!("{:?}", result[[12, 5, 20]]);
     }
 
-    impl ApproxEq for Voxel {
-        type Margin = F32Margin;
-
-        fn approx_eq<T: Into<Self::Margin>>(self, other: Self, margin: T) -> bool {
-            let margin = margin.into();
-
-            self.iso_value.approx_eq(other.iso_value, margin)
-        }
-    }
 }

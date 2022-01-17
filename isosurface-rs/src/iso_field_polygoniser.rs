@@ -4,10 +4,10 @@ use ndarray::{Array, Array3};
 use std::convert::From;
 use std::ops::{Add, Mul};
 use std::vec::IntoIter;
-use crate::iso_field_generator::{ScalarField, Voxel};
-use num_traits::Zero;
-use crate::{compose, iso_field_generator};
+use crate::voxel::Voxel;
+use crate::compose;
 use crate::compose::compose_two;
+use crate::iso_field_generator::ScalarField;
 
 type Indexes = (usize, usize, usize);
 type Mask = (usize, usize, usize);
