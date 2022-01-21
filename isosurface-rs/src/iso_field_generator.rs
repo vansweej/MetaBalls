@@ -1,8 +1,6 @@
 use std::cell::RefCell;
 use ndarray::{Array, Array3, IntoDimension, Zip};
 use partial_application::partial;
-use ndarray::azip;
-//use rayon::prelude::IntoParallelIterator;
 
 use crate::voxel::Voxel;
 
@@ -72,7 +70,6 @@ impl CachedScalarField {
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::BorrowMut;
     use super::*;
     use float_cmp::{approx_eq};
     use pretty_assertions::assert_eq;
