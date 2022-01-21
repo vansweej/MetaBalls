@@ -1,6 +1,8 @@
-
-use ndarray::{Array, Array3, IntoDimension};
+use std::cell::RefCell;
+use ndarray::{Array, Array3, IntoDimension, Zip};
 use partial_application::partial;
+use ndarray::azip;
+//use rayon::prelude::IntoParallelIterator;
 
 use crate::voxel::Voxel;
 
@@ -40,8 +42,37 @@ pub fn generate_iso_field2(
         .unwrap()
 }
 
+pub struct CachedScalarField {
+    index_cache: Array3<(usize, usize, usize)>,
+    scalar_field: RefCell<Array3<Voxel>>,
+}
+
+impl CachedScalarField {
+    pub fn new(size: usize) -> Self {
+        CachedScalarField {
+            index_cache: Array::from_shape_fn([size; 3].into_dimension(), |(x, y, z)| (x, y, z)),
+            scalar_field: RefCell::new(Array::zeros((size, size, size))),
+        }
+    }
+
+    pub fn generate_iso_field(&mut self, ball_positions: &[(f32, f32, f32)]) {
+
+        let r = self.scalar_field.get_mut();
+
+        Zip::from(r).and(&self.index_cache).for_each(|sf, &b| {*sf = calculate_voxel_value(b, ball_positions)});
+    }
+
+    pub fn generate_iso_field_mt(&mut self, ball_positions: &[(f32, f32, f32)]) {
+
+        let r = self.scalar_field.get_mut();
+
+        Zip::from(r).and(&self.index_cache).par_for_each(|sf, &b| {*sf = calculate_voxel_value(b, ball_positions)});
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::borrow::BorrowMut;
     use super::*;
     use float_cmp::{approx_eq};
     use pretty_assertions::assert_eq;
@@ -79,17 +110,27 @@ mod tests {
     }
 
     #[test]
-    fn test_content() {
-        let result = generate_iso_field(GRID_SIZE, &BALL_POS);
-        println!("{:?}", result[[0, 0, 0]]);
+    fn test_caching_generator() {
+        let mut test = CachedScalarField::new(GRID_SIZE);
+        test.index_cache.indexed_iter().for_each(|(index, data)| {assert_eq!(index.0, data.0); assert_eq!(index.1, data.1); assert_eq!(index.2, data.2)});
 
-        println!("{:?}", result[[0, 0, 1]]);
+        test.generate_iso_field(&BALL_POS);
 
-        println!("{:?}", result[[0, 1, 0]]);
+        let test1 = generate_iso_field(GRID_SIZE, &BALL_POS);
 
-        println!("{:?}", result[[1, 0, 0]]);
+        test.scalar_field.borrow().indexed_iter().for_each(|(index, data)| {assert!(approx_eq!(Voxel, *data, test1[[index.0, index.1, index.2]], ulps = 2))});
+    }
 
-        println!("{:?}", result[[12, 5, 20]]);
+    #[test]
+    fn test_caching_generator_mt() {
+        let mut test = CachedScalarField::new(GRID_SIZE);
+        test.index_cache.indexed_iter().for_each(|(index, data)| {assert_eq!(index.0, data.0); assert_eq!(index.1, data.1); assert_eq!(index.2, data.2)});
+
+        test.generate_iso_field_mt(&BALL_POS);
+
+        let test1 = generate_iso_field(GRID_SIZE, &BALL_POS);
+
+        test.scalar_field.borrow().indexed_iter().for_each(|(index, data)| {assert!(approx_eq!(Voxel, *data, test1[[index.0, index.1, index.2]], ulps = 2))});
     }
 
 }

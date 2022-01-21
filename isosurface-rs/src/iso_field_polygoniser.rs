@@ -1,6 +1,4 @@
-use ndarray::{Array, Array1, Array3, ArrayView, ArrayView1, ArrayView3, Ix3};
-use rayon::prelude::*;
-// use rayon::vec::IntoIter;
+use ndarray::{Array, Array1, Array3, ArrayView3};
 use std::convert::From;
 use std::ops::{Add, Mul};
 use std::vec::IntoIter;
@@ -57,8 +55,6 @@ fn collect_iso_volume(iso_field: &ScalarField) -> Array3<Array3<Voxel>> {
         .into_shape((grid_size / 2, grid_size / 2, grid_size / 2))
         .unwrap()
 }
-
-
 
 pub fn cubes_iter(iso_field: &ScalarField) -> IntoIter<Cube> {
     let chunked_iso_field = collect_iso_volume(&iso_field);
@@ -130,9 +126,7 @@ mod tests {
 
         let c_iter = cubes_iter(&iso_cube);
 
-
         c_iter.for_each(|v| assert_cube(&v, &iso_cube));
-
     }
 
     #[test]
@@ -142,7 +136,5 @@ mod tests {
         let c_iter = cubes_iter2(&iso_cube);
 
         c_iter.for_each(|v| assert_cube(&v, &iso_cube));
-
-
     }
 }
