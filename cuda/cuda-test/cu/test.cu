@@ -4,79 +4,20 @@
 #include <iostream>
 #include <memory>
 
-#include "cudaError.cuh"
+#include "cuda_error.cuh"
 #include "test.cuh"
+#include "cuda_properties_iterator.h"
+
 
 int maxGridSize[3];
 int maxThreadPerBlock;
 
 __global__ void cuda_hello() { printf("Hello World from GPU!\n"); }
 
-class CudaDevicePropertiesIterator {
- public:
-  CudaDevicePropertiesIterator() : currentIdx(0) {
-    cudaGetDeviceCount(&deviceCount);
-    cudaGetDeviceProperties(&prop, currentIdx);
-  }
-
-  cudaDeviceProp &operator*() { return prop; }
-
-  cudaDeviceProp *operator->() { return &prop; }
-
-  CudaDevicePropertiesIterator begin() {
-    return CudaDevicePropertiesIterator(0);
-  }
-  CudaDevicePropertiesIterator end() {
-    return CudaDevicePropertiesIterator(deviceCount);
-  }
-
-  CudaDevicePropertiesIterator &operator++() {
-    currentIdx = std::min(currentIdx + 1, deviceCount);
-    if (currentIdx < deviceCount) {
-      cudaGetDeviceProperties(&prop, currentIdx);
-    }
-    return *this;
-  }
-  CudaDevicePropertiesIterator operator++(int) {
-    CudaDevicePropertiesIterator tmp = *this;
-    ++(*this);
-    return tmp;
-  }
-  CudaDevicePropertiesIterator &operator--() {
-      currentIdx = std::max(currentIdx - 1, 0);
-      if (currentIdx > 0) {
-      cudaGetDeviceProperties(&prop, currentIdx);
-    }
-    return *this;
-  }
-  CudaDevicePropertiesIterator operator--(int) {
-    CudaDevicePropertiesIterator tmp = *this;
-    --(*this);
-    return tmp;
-  }
-  bool operator==(const CudaDevicePropertiesIterator &other) {
-    return (currentIdx == other.currentIdx);
-  }
-  bool operator!=(const CudaDevicePropertiesIterator &other) {
-    return (currentIdx != other.currentIdx);
-  }
-
- private:
-  CudaDevicePropertiesIterator(int idx) : currentIdx(idx) {
-    cudaGetDeviceCount(&deviceCount);
-    cudaGetDeviceProperties(&prop, currentIdx);
-  }
-  int currentIdx;
-  int deviceCount;
-  cudaDeviceProp prop;
-};
-
 void GetCudaProperties() {
-  CudaDevicePropertiesIterator itr;
-  for (auto i = itr.begin(); i != itr.end(); ++i) {
-    std::copy(i->maxGridSize, i->maxGridSize + 3, maxGridSize);
-    maxThreadPerBlock = i->maxThreadsPerBlock;
-    std::cout << i->name << std::endl;
+  m_CudaProperties cudaProperties;
+  for (auto prop : cudaProperties) {
+    std::cout << prop.name << std::endl;
   }
 }
 

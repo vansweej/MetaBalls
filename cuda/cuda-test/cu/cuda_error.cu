@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "cudaError.cuh"
+#include "cuda_error.cuh"
 
 void CudaFetchError() {
   cudaError_t cudaerr = cudaDeviceSynchronize();
