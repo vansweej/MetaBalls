@@ -15,7 +15,7 @@ int maxThreadPerBlock;
 __global__ void cuda_hello() { printf("Hello World from GPU!\n"); }
 
 void GetCudaProperties() {
-  m_CudaProperties cudaProperties;
+  CudaProperties cudaProperties;
   for (auto prop : cudaProperties) {
     std::cout << prop.name << std::endl;
   }

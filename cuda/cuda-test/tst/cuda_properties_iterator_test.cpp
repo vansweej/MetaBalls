@@ -3,7 +3,7 @@
 
 TEST(CudaPropertiesIterator_test, CudaPropertiesIterator_test) {
 
-  m_CudaProperties cudaProperties;
+  CudaProperties cudaProperties;
   for (auto prop : cudaProperties) {
     ASSERT_TRUE(prop.name);
   }

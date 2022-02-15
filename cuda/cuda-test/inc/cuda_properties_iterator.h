@@ -3,9 +3,9 @@
 #include "cuda_runtime.h"
 #include <algorithm>
 
-class m_CudaProperties {
+class CudaProperties {
  public:
-  m_CudaProperties() { cudaGetDeviceCount(&deviceCount); }
+  CudaProperties() { cudaGetDeviceCount(&deviceCount); }
   struct CudaDevicePropertiesIterator {
     using iterator_category = std::forward_iterator_tag;
     using difference_type = int;
@@ -13,7 +13,7 @@ class m_CudaProperties {
     using pointer = cudaDeviceProp *;    // or also value_type*
     using reference = cudaDeviceProp &;  // or also value_type&
 
-    friend class m_CudaProperties;
+    friend class CudaProperties;
 
    public:
     reference operator*() { return prop; }
