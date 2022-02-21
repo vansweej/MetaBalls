@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "cudaError.cuh"
+#include "cuda_error.cuh"
 #include "main.cuh"
 #include "test.cuh"
 
