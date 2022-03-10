@@ -1,7 +1,4 @@
-cmake_minimum_required (VERSION 3.16)
-
-set (CMAKE_CXX_STANDARD 17)
-set (CMAKE_BUILD_TYPE Debug)
+enable_language(CUDA)
 
 project(cuda-test)
 
@@ -32,7 +29,6 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH_LIST
 if(NOT BUILD_TESTING)
 	return()
 endif()
-
 
 set(testTarget ${PROJECT_NAME}_test)
 set(testSource tst/cuda_properties_iterator_test.cpp)
